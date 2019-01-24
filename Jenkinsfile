@@ -24,22 +24,16 @@ pipeline {
 			}
 		}
 		
+		stage('Scan with LifeCycle') {
+			steps {
+				nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: "sample-app", 
+				iqScanPatterns: [[scanPattern: ""]], iqStage: "build", jobCredentialsId: ''
+			}
+		}
+		
 		stage('Deliver') { 
 			steps {
 				sh './jenkins/scripts/deliver.sh' 
-			}
-		}
-
-		stage('Nexus Lifecycle Analysis') {
-			postGitHub commitId, 'pending', 'analysis', 'Nexus Lifecycle Analysis is running'
-
-			try {
-				def policyEvaluation = nexusPolicyEvaluation iqApplication: 'sample-app', iqStage: 'build'
-				postGitHub commitId, 'success', 'analysis', 'Nexus Lifecycle Analysis succeeded', "${policyEvaluation.applicationCompositionReportUrl}"
-			} catch (error) {
-				def policyEvaluation = error.policyEvaluation
-				postGitHub commitId, 'failure', 'analysis', 'Nexus Lifecycle Analysis failed', "${policyEvaluation.applicationCompositionReportUrl}"
-				throw error
 			}
 		}
 	}
